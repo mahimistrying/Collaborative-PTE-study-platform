@@ -563,3 +563,16 @@ def delete_whiteboard(request, whiteboard_id):
             return JsonResponse({'success': False, 'error': str(e)})
     
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+def health_check(request):
+    """Simple health check endpoint"""
+    return JsonResponse({
+        'status': 'ok',
+        'message': 'PTE Guide is running!',
+        'features': [
+            'Interactive Whiteboard',
+            'User Authentication', 
+            'Progress Tracking',
+            'Collaborative Study'
+        ]
+    })

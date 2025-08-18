@@ -1,1 +1,1 @@
-web: python manage.py migrate && python manage.py collectstatic --noinput && gunicorn pte_guide.wsgi --log-file -
+web: python manage.py migrate && python manage.py setup_initial_data && python manage.py collectstatic --noinput && gunicorn pte_guide.wsgi --log-file -

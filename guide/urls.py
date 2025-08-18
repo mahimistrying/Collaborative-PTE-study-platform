@@ -22,4 +22,5 @@ urlpatterns = [
     path('whiteboard/gallery/', views.whiteboard_gallery, name='whiteboard_gallery'),
     path('whiteboard/save/', views.save_whiteboard, name='save_whiteboard'),
     path('whiteboard/delete/<int:whiteboard_id>/', views.delete_whiteboard, name='delete_whiteboard'),
+    path('health/', views.health_check, name='health_check'),
 ]
