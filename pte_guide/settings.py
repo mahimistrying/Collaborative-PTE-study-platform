@@ -38,7 +38,7 @@ SECRET_KEY = config('SECRET_KEY', default="django-insecure-c@0*r3_^z=tu71anjt%)m
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=True, cast=bool)
 
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1', cast=lambda v: [s.strip() for s in v.split(',')])
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,collaborative-pte-study-platform.onrender.com', cast=lambda v: [s.strip() for s in v.split(',')])
 
 
 # Application definition
