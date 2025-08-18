@@ -1,0 +1,146 @@
+{% extends 'guide/base.html' %}
+
+{% block title %}{{ action }} Content - PTE Guide{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+                {% if content %}
+                    <li class="breadcrumb-item"><a href="{% url 'section_detail' content.section.name %}">{{ content.section.title }}</a></li>
+                {% endif %}
+                <li class="breadcrumb-item active">{{ action }} Content</li>
+            </ol>
+        </nav>
+
+        <div class="card">
+            <div class="card-header">
+                <h4><i class="fas fa-edit"></i> {{ action }} Content</h4>
+            </div>
+            <div class="card-body">
+                <form method="post" id="contentForm">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="section" class="form-label">Section *</label>
+                        <select class="form-select" id="section" name="section" required>
+                            <option value="">Choose section...</option>
+                            {% for sec in sections %}
+                                <option value="{{ sec.id }}" 
+                                        {% if content and content.section.id == sec.id %}selected{% endif %}
+                                        {% if request.GET.section == sec.id|stringformat:"s" %}selected{% endif %}>
+                                    {{ sec.title }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Title *</label>
+                        <input type="text" class="form-control" id="title" name="title" 
+                               value="{% if content %}{{ content.title }}{% endif %}" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="content_type" class="form-label">Content Type *</label>
+                        <select class="form-select" id="content_type" name="content_type" required>
+                            <option value="">Choose type...</option>
+                            <option value="video" {% if content and content.content_type == 'video' %}selected{% endif %}>YouTube Video</option>
+                            <option value="note" {% if content and content.content_type == 'note' %}selected{% endif %}>Note</option>
+                            <option value="text" {% if content and content.content_type == 'text' %}selected{% endif %}>Text Content</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="3">{% if content %}{{ content.description }}{% endif %}</textarea>
+                    </div>
+
+                    <div class="mb-3" id="youtube_field" style="display: none;">
+                        <label for="youtube_url" class="form-label">YouTube URL</label>
+                        <input type="text" class="form-control" id="youtube_url" name="youtube_url" 
+                               placeholder="https://www.youtube.com/watch?v=...">
+                        <div class="form-text">Paste the full YouTube URL here</div>
+                    </div>
+
+                    <div class="mb-3" id="text_field" style="display: none;">
+                        <label for="text_content" class="form-label">Text Content</label>
+                        <textarea class="form-control" id="text_content" name="text_content" rows="8">{% if content %}{{ content.text_content }}{% endif %}</textarea>
+                        <div class="form-text">Enter your notes or text content here</div>
+                    </div>
+
+
+                    <div class="mb-3">
+                        <label for="order" class="form-label">Display Order</label>
+                        <input type="number" class="form-control" id="order" name="order" 
+                               value="{% if content %}{{ content.order }}{% else %}0{% endif %}" min="0">
+                        <div class="form-text">Lower numbers appear first (0 = first)</div>
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{% if content %}{% url 'section_detail' content.section.name %}{% else %}{% url 'home' %}{% endif %}" 
+                           class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary" id="submitBtn">
+                            <i class="fas fa-save"></i> {{ action }} Content
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const contentTypeSelect = document.getElementById('content_type');
+    const youtubeField = document.getElementById('youtube_field');
+    const textField = document.getElementById('text_field');
+    const youtubeInput = document.getElementById('youtube_url');
+    
+    // Set initial values AFTER DOM is loaded
+    {% if content %}
+        {% if content.youtube_url and content.youtube_url != 'None' %}
+            youtubeInput.value = "{{ content.youtube_url|escapejs }}";
+        {% endif %}
+    {% endif %}
+    
+    function toggleFields() {
+        const selectedType = contentTypeSelect.value;
+        
+        // Hide all fields
+        youtubeField.style.display = 'none';
+        textField.style.display = 'none';
+        
+        // Show relevant field
+        if (selectedType === 'video') {
+            youtubeField.style.display = 'block';
+        } else if (selectedType === 'note' || selectedType === 'text') {
+            textField.style.display = 'block';
+        }
+    }
+    
+    // Initial toggle
+    toggleFields();
+    
+    // Toggle on change
+    contentTypeSelect.addEventListener('change', toggleFields);
+    
+    // Simple form validation
+    document.getElementById('contentForm').addEventListener('submit', function(e) {
+        const section = document.getElementById('section').value;
+        const title = document.getElementById('title').value;
+        const contentType = document.getElementById('content_type').value;
+        
+        if (!section || !title || !contentType) {
+            e.preventDefault();
+            alert('Please fill in all required fields (Section, Title, Content Type)');
+            return false;
+        }
+    });
+});
+</script>
+{% endblock %}

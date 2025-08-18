@@ -1,0 +1,143 @@
+{% extends 'guide/base.html' %}
+
+{% block title %}My Progress - PTE Guide{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1><i class="fas fa-chart-line text-success"></i> My Progress</h1>
+        <p class="lead">Track your learning progress across all PTE sections</p>
+    </div>
+</div>
+
+<!-- Progress Overview -->
+<div class="row mb-4">
+    {% for section_name, data in progress_data.items %}
+        <div class="col-md-6 col-lg-3 mb-3">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        {% if section_name == 'speaking' %}
+                            <i class="fas fa-microphone fa-2x text-primary"></i>
+                        {% elif section_name == 'writing' %}
+                            <i class="fas fa-pen fa-2x text-success"></i>
+                        {% elif section_name == 'reading' %}
+                            <i class="fas fa-book fa-2x text-warning"></i>
+                        {% elif section_name == 'listening' %}
+                            <i class="fas fa-headphones fa-2x text-info"></i>
+                        {% endif %}
+                    </div>
+                    <h5 class="card-title">{{ data.section.title }}</h5>
+                    <div class="progress mb-2" style="height: 10px;">
+                        <div class="progress-bar" role="progressbar" 
+                             style="width: {{ data.percentage }}%"
+                             aria-valuenow="{{ data.percentage }}" 
+                             aria-valuemin="0" 
+                             aria-valuemax="100">
+                        </div>
+                    </div>
+                    <p class="card-text">
+                        <strong>{{ data.completed }}</strong> of <strong>{{ data.total }}</strong> completed
+                        <br>
+                        <small class="text-muted">{{ data.percentage|floatformat:0 }}%</small>
+                    </p>
+                    <a href="{% url 'section_detail' section_name %}" class="btn btn-sm btn-outline-primary">
+                        Continue Learning
+                    </a>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+
+<!-- Recent Completed Content -->
+{% if recent_completed %}
+<div class="row">
+    <div class="col-12">
+        <h3><i class="fas fa-clock"></i> Recently Completed</h3>
+        <div class="row">
+            {% for progress in recent_completed %}
+                <div class="col-md-6 col-lg-4 mb-3">
+                    <div class="card">
+                        <div class="card-body">
+                            <h6 class="card-title">
+                                <a href="{% url 'section_detail' progress.content.section.name %}" class="text-decoration-none">
+                                    {{ progress.content.title }}
+                                </a>
+                            </h6>
+                            <p class="card-text">
+                                <small class="text-muted">
+                                    <i class="fas fa-{% if progress.content.section.name == 'speaking' %}microphone{% elif progress.content.section.name == 'writing' %}pen{% elif progress.content.section.name == 'reading' %}book{% else %}headphones{% endif %}"></i>
+                                    {{ progress.content.section.title }}
+                                    <br>
+                                    Completed: {{ progress.completed_at|date:"M d, Y" }}
+                                </small>
+                            </p>
+                            <span class="badge bg-success">
+                                <i class="fas fa-check"></i> Completed
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Overall Statistics -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-chart-bar"></i> Overall Statistics</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <h4 class="text-primary">
+                            {% with total_completed=0 %}
+                                {% for section_name, data in progress_data.items %}
+                                    {% with total_completed=total_completed|add:data.completed %}{% endwith %}
+                                {% endfor %}
+                                {{ total_completed }}
+                            {% endwith %}
+                        </h4>
+                        <small class="text-muted">Total Completed</small>
+                    </div>
+                    <div class="col-md-3">
+                        <h4 class="text-success">
+                            {% with total_content=0 %}
+                                {% for section_name, data in progress_data.items %}
+                                    {% with total_content=total_content|add:data.total %}{% endwith %}
+                                {% endfor %}
+                                {{ total_content }}
+                            {% endwith %}
+                        </h4>
+                        <small class="text-muted">Total Content</small>
+                    </div>
+                    <div class="col-md-3">
+                        <h4 class="text-warning">
+                            {% with overall_percentage=0 total_completed=0 total_content=0 %}
+                                {% for section_name, data in progress_data.items %}
+                                    {% with total_completed=total_completed|add:data.completed total_content=total_content|add:data.total %}{% endwith %}
+                                {% endfor %}
+                                {% if total_content > 0 %}
+                                    {% widthratio total_completed total_content 100 %}%
+                                {% else %}
+                                    0%
+                                {% endif %}
+                            {% endwith %}
+                        </h4>
+                        <small class="text-muted">Overall Progress</small>
+                    </div>
+                    <div class="col-md-3">
+                        <h4 class="text-info">{{ recent_completed|length }}</h4>
+                        <small class="text-muted">Recent Completions</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

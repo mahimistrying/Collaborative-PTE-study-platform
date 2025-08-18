@@ -1,0 +1,486 @@
+{% extends 'guide/base.html' %}
+
+{% block title %}Collaborative Whiteboard - PTE Guide{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'section_detail' 'collaborative' %}">Collaborative Study</a></li>
+                <li class="breadcrumb-item active">Whiteboard</li>
+            </ol>
+        </nav>
+        
+        <div class="d-flex justify-content-between align-items-center">
+            <h1><i class="fas fa-chalkboard text-purple"></i> Collaborative Whiteboard</h1>
+            <div>
+                <a href="{% url 'whiteboard_gallery' %}" class="btn btn-outline-secondary me-2">
+                    <i class="fas fa-images"></i> Gallery
+                </a>
+                <button id="saveBoard" class="btn btn-success">
+                    <i class="fas fa-save"></i> Save Board
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <!-- Whiteboard Tools -->
+        <div class="card mb-3">
+            <div class="card-body p-2">
+                <div class="row align-items-center">
+                    <div class="col-auto">
+                        <label class="form-label mb-0">Tool:</label>
+                        <div class="btn-group" role="group">
+                            <input type="radio" class="btn-check" name="tool" id="pen" value="pen" checked>
+                            <label class="btn btn-outline-primary btn-sm" for="pen">
+                                <i class="fas fa-pen"></i> Pen
+                            </label>
+                            
+                            <input type="radio" class="btn-check" name="tool" id="eraser" value="eraser">
+                            <label class="btn btn-outline-secondary btn-sm" for="eraser">
+                                <i class="fas fa-eraser"></i> Eraser
+                            </label>
+                            
+                            <input type="radio" class="btn-check" name="tool" id="text" value="text">
+                            <label class="btn btn-outline-info btn-sm" for="text">
+                                <i class="fas fa-font"></i> Text
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="col-auto">
+                        <label for="colorPicker" class="form-label mb-0">Color:</label>
+                        <input type="color" id="colorPicker" class="form-control form-control-color" value="#000000">
+                    </div>
+                    
+                    <div class="col-auto">
+                        <label for="brushSize" class="form-label mb-0">Size:</label>
+                        <input type="range" id="brushSize" class="form-range" min="1" max="20" value="3" style="width: 100px;">
+                        <span id="brushSizeValue">3</span>px
+                    </div>
+                    
+                    <div class="col-auto">
+                        <button id="clearBoard" class="btn btn-outline-danger btn-sm">
+                            <i class="fas fa-trash"></i> Clear
+                        </button>
+                    </div>
+                    
+                    <div class="col-auto">
+                        <button id="undoBtn" class="btn btn-outline-warning btn-sm">
+                            <i class="fas fa-undo"></i> Undo
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Whiteboard Canvas -->
+        <div class="card">
+            <div class="card-body p-0">
+                <canvas id="whiteboard" 
+                        width="1200" 
+                        height="600" 
+                        style="border: 2px solid #ddd; display: block; width: 100%; height: 600px; cursor: crosshair;">
+                    Your browser doesn't support canvas.
+                </canvas>
+            </div>
+        </div>
+        
+        <div class="mt-3 text-muted text-center">
+            <small>
+                <i class="fas fa-info-circle"></i> 
+                Draw, write notes, and collaborate with your study group. Save your work to the gallery for later reference.
+            </small>
+        </div>
+    </div>
+</div>
+
+<!-- Save Modal -->
+<div class="modal fade" id="saveModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Save Whiteboard</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="boardTitle" class="form-label">Title</label>
+                    <input type="text" class="form-control" id="boardTitle" 
+                           placeholder="Enter a title for your whiteboard session">
+                </div>
+                <div class="mb-3">
+                    <small class="text-muted">Preview:</small>
+                    <div id="previewContainer" class="border rounded p-2 text-center">
+                        <canvas id="previewCanvas" style="max-width: 100%; height: auto;"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" id="confirmSave">
+                    <i class="fas fa-save"></i> Save to Gallery
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+class CollaborativeWhiteboard {
+    constructor() {
+        this.canvas = document.getElementById('whiteboard');
+        this.ctx = this.canvas.getContext('2d');
+        this.isDrawing = false;
+        this.currentTool = 'pen';
+        this.currentColor = '#000000';
+        this.currentSize = 3;
+        this.history = [];
+        this.historyStep = -1;
+        this.lastPoint = null;
+        this.isTextMode = false;
+        this.textInput = null;
+        
+        this.initializeCanvas();
+        this.setupEventListeners();
+        this.saveState();
+    }
+    
+    initializeCanvas() {
+        // Set canvas background to white
+        this.ctx.fillStyle = 'white';
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        
+        // Set default drawing properties
+        this.ctx.lineCap = 'round';
+        this.ctx.lineJoin = 'round';
+    }
+    
+    setupEventListeners() {
+        // Drawing events with smooth drawing
+        this.canvas.addEventListener('mousedown', (e) => this.startDrawing(e));
+        this.canvas.addEventListener('mousemove', (e) => this.draw(e));
+        this.canvas.addEventListener('mouseup', () => this.stopDrawing());
+        this.canvas.addEventListener('mouseout', () => this.stopDrawing());
+        
+        // Touch events for mobile with smooth touch
+        this.canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            this.startDrawing(e.touches[0]);
+        });
+        this.canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            this.draw(e.touches[0]);
+        });
+        this.canvas.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            this.stopDrawing();
+        });
+        
+        // Tool selection
+        document.querySelectorAll('input[name="tool"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                // Clean up text input when switching tools
+                this.removeTextInput();
+                this.currentTool = e.target.value;
+                this.updateCursor();
+            });
+        });
+        
+        // Color picker
+        document.getElementById('colorPicker').addEventListener('change', (e) => {
+            this.currentColor = e.target.value;
+        });
+        
+        // Brush size
+        const brushSize = document.getElementById('brushSize');
+        const brushSizeValue = document.getElementById('brushSizeValue');
+        brushSize.addEventListener('input', (e) => {
+            this.currentSize = e.target.value;
+            brushSizeValue.textContent = e.target.value;
+        });
+        
+        // Control buttons
+        document.getElementById('clearBoard').addEventListener('click', () => this.clearBoard());
+        document.getElementById('undoBtn').addEventListener('click', () => this.undo());
+        document.getElementById('saveBoard').addEventListener('click', () => this.showSaveModal());
+        document.getElementById('confirmSave').addEventListener('click', () => this.saveBoard());
+        
+        // Canvas clicks for text tool
+        this.canvas.addEventListener('click', (e) => {
+            if (this.currentTool === 'text') {
+                this.addText(e);
+            }
+        });
+    }
+    
+    getCanvasCoordinates(e) {
+        const rect = this.canvas.getBoundingClientRect();
+        const scaleX = this.canvas.width / rect.width;
+        const scaleY = this.canvas.height / rect.height;
+        
+        return {
+            x: (e.clientX - rect.left) * scaleX,
+            y: (e.clientY - rect.top) * scaleY
+        };
+    }
+    
+    startDrawing(e) {
+        if (this.currentTool === 'text') return;
+        
+        this.isDrawing = true;
+        const coords = this.getCanvasCoordinates(e);
+        this.lastPoint = coords;
+        
+        if (this.currentTool === 'eraser') {
+            this.ctx.globalCompositeOperation = 'destination-out';
+        } else {
+            this.ctx.globalCompositeOperation = 'source-over';
+            this.ctx.strokeStyle = this.currentColor;
+        }
+        
+        this.ctx.lineWidth = this.currentSize;
+        this.ctx.lineCap = 'round';
+        this.ctx.lineJoin = 'round';
+        
+        // Draw a dot for single clicks
+        this.ctx.beginPath();
+        this.ctx.arc(coords.x, coords.y, this.currentSize/2, 0, Math.PI * 2);
+        this.ctx.fillStyle = this.currentTool === 'eraser' ? 'white' : this.currentColor;
+        if (this.currentTool === 'eraser') {
+            this.ctx.globalCompositeOperation = 'destination-out';
+            this.ctx.fill();
+        } else {
+            this.ctx.globalCompositeOperation = 'source-over';
+            this.ctx.fill();
+        }
+    }
+    
+    draw(e) {
+        if (!this.isDrawing || this.currentTool === 'text') return;
+        
+        const coords = this.getCanvasCoordinates(e);
+        
+        if (this.lastPoint) {
+            // Smooth line drawing with quadratic curves
+            this.ctx.globalCompositeOperation = this.currentTool === 'eraser' ? 'destination-out' : 'source-over';
+            this.ctx.strokeStyle = this.currentColor;
+            this.ctx.lineWidth = this.currentSize;
+            this.ctx.lineCap = 'round';
+            this.ctx.lineJoin = 'round';
+            
+            this.ctx.beginPath();
+            this.ctx.moveTo(this.lastPoint.x, this.lastPoint.y);
+            
+            // Use quadratic curve for smoother lines
+            const midX = (this.lastPoint.x + coords.x) / 2;
+            const midY = (this.lastPoint.y + coords.y) / 2;
+            this.ctx.quadraticCurveTo(this.lastPoint.x, this.lastPoint.y, midX, midY);
+            this.ctx.stroke();
+        }
+        
+        this.lastPoint = coords;
+    }
+    
+    stopDrawing() {
+        if (this.isDrawing) {
+            this.isDrawing = false;
+            this.lastPoint = null;
+            this.saveState();
+        }
+    }
+    
+    addText(e) {
+        // Remove existing text input if any
+        this.removeTextInput();
+        
+        const coords = this.getCanvasCoordinates(e);
+        const rect = this.canvas.getBoundingClientRect();
+        
+        // Create inline text input
+        this.textInput = document.createElement('input');
+        this.textInput.type = 'text';
+        this.textInput.style.position = 'absolute';
+        this.textInput.style.left = (rect.left + e.clientX - rect.left) + 'px';
+        this.textInput.style.top = (rect.top + e.clientY - rect.top) + 'px';
+        this.textInput.style.border = `2px solid ${this.currentColor}`;
+        this.textInput.style.backgroundColor = 'rgba(255,255,255,0.9)';
+        this.textInput.style.color = this.currentColor;
+        this.textInput.style.fontSize = `${this.currentSize * 4}px`;
+        this.textInput.style.fontFamily = 'Arial';
+        this.textInput.style.padding = '2px 4px';
+        this.textInput.style.borderRadius = '3px';
+        this.textInput.style.outline = 'none';
+        this.textInput.style.zIndex = '1000';
+        this.textInput.placeholder = 'Type here...';
+        
+        // Add to page
+        document.body.appendChild(this.textInput);
+        this.textInput.focus();
+        
+        // Handle text input events
+        this.textInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                this.finishTextInput(coords);
+            } else if (event.key === 'Escape') {
+                this.removeTextInput();
+            }
+        });
+        
+        this.textInput.addEventListener('blur', () => {
+            if (this.textInput && this.textInput.value.trim()) {
+                this.finishTextInput(coords);
+            } else {
+                this.removeTextInput();
+            }
+        });
+    }
+    
+    finishTextInput(coords) {
+        if (this.textInput && this.textInput.value.trim()) {
+            this.ctx.globalCompositeOperation = 'source-over';
+            this.ctx.fillStyle = this.currentColor;
+            this.ctx.font = `${this.currentSize * 4}px Arial`;
+            this.ctx.textBaseline = 'top';
+            this.ctx.fillText(this.textInput.value, coords.x, coords.y);
+            this.saveState();
+        }
+        this.removeTextInput();
+    }
+    
+    removeTextInput() {
+        if (this.textInput) {
+            this.textInput.remove();
+            this.textInput = null;
+        }
+    }
+    
+    clearBoard() {
+        this.removeTextInput();
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.ctx.fillStyle = 'white';
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        this.saveState();
+    }
+    
+    saveState() {
+        this.historyStep++;
+        if (this.historyStep < this.history.length) {
+            this.history.length = this.historyStep;
+        }
+        this.history.push(this.canvas.toDataURL());
+    }
+    
+    undo() {
+        if (this.historyStep > 0) {
+            this.historyStep--;
+            const img = new Image();
+            img.onload = () => {
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                this.ctx.drawImage(img, 0, 0);
+            };
+            img.src = this.history[this.historyStep];
+        }
+    }
+    
+    updateCursor() {
+        if (this.currentTool === 'pen') {
+            this.canvas.style.cursor = 'crosshair';
+        } else if (this.currentTool === 'eraser') {
+            this.canvas.style.cursor = 'cell';
+        } else if (this.currentTool === 'text') {
+            this.canvas.style.cursor = 'text';
+        }
+    }
+    
+    showSaveModal() {
+        // Create preview
+        const previewCanvas = document.getElementById('previewCanvas');
+        const previewCtx = previewCanvas.getContext('2d');
+        
+        // Set preview canvas size
+        previewCanvas.width = 400;
+        previewCanvas.height = 200;
+        
+        // Draw scaled version
+        previewCtx.drawImage(this.canvas, 0, 0, 400, 200);
+        
+        // Set default title
+        const now = new Date();
+        document.getElementById('boardTitle').value = `Whiteboard - ${now.toLocaleDateString()} ${now.toLocaleTimeString()}`;
+        
+        // Show modal
+        new bootstrap.Modal(document.getElementById('saveModal')).show();
+    }
+    
+    async saveBoard() {
+        const title = document.getElementById('boardTitle').value || 'Untitled Whiteboard';
+        const imageData = this.canvas.toDataURL('image/jpeg', 0.8);
+        
+        try {
+            const response = await fetch('{% url "save_whiteboard" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({
+                    title: title,
+                    image_data: imageData
+                })
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                // Hide modal
+                bootstrap.Modal.getInstance(document.getElementById('saveModal')).hide();
+                
+                // Show success message
+                alert('Whiteboard saved successfully!');
+                
+                // Optionally redirect to gallery
+                // window.location.href = '{% url "whiteboard_gallery" %}';
+            } else {
+                alert('Error saving whiteboard: ' + result.error);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error saving whiteboard. Please try again.');
+        }
+    }
+}
+
+// Initialize whiteboard when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    const whiteboard = new CollaborativeWhiteboard();
+});
+</script>
+
+<style>
+#whiteboard {
+    background-color: white;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.form-control-color {
+    width: 40px;
+    height: 35px;
+    border-radius: 6px;
+}
+
+.form-range {
+    width: 100px;
+}
+
+#previewCanvas {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+</style>
+{% endblock %}

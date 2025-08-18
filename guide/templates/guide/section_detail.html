@@ -1,0 +1,315 @@
+{% extends 'guide/base.html' %}
+{% load guide_extras %}
+
+{% block title %}{{ section.title }} - PTE Guide{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+                <li class="breadcrumb-item active">{{ section.title }}</li>
+            </ol>
+        </nav>
+        
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1>
+                    {% if section.name == 'speaking' %}
+                        <i class="fas fa-microphone text-primary"></i>
+                    {% elif section.name == 'writing' %}
+                        <i class="fas fa-pen text-success"></i>
+                    {% elif section.name == 'reading' %}
+                        <i class="fas fa-book text-warning"></i>
+                    {% elif section.name == 'listening' %}
+                        <i class="fas fa-headphones text-info"></i>
+                    {% elif section.name == 'collaborative' %}
+                        <i class="fas fa-users text-purple"></i>
+                    {% endif %}
+                    {{ section.title }}
+                </h1>
+                {% if section.description %}
+                    <p class="lead">{{ section.description }}</p>
+                {% endif %}
+            </div>
+            
+            {% if is_edit_mode %}
+                <a href="{% url 'add_content' %}?section={{ section.id }}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Add Content
+                </a>
+            {% endif %}
+        </div>
+        
+        <!-- PTE Section-Specific Timer Presets -->
+        <div class="card mt-3">
+            <div class="card-body">
+                <h6 class="card-title">
+                    <i class="fas fa-clock text-primary"></i> 
+                    Quick Timer Presets for {{ section.title }}
+                </h6>
+                <div class="btn-group flex-wrap" role="group">
+                    {% if section.name == 'speaking' %}
+                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="setTimer(30)">
+                            <i class="fas fa-user"></i> Personal Intro (30s)
+                        </button>
+                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="setTimer(40)">
+                            <i class="fas fa-microphone"></i> Read Aloud (40s)
+                        </button>
+                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="setTimer(15)">
+                            <i class="fas fa-repeat"></i> Repeat Sentence (15s)
+                        </button>
+                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="setTimer(40)">
+                            <i class="fas fa-image"></i> Describe Image (40s)
+                        </button>
+                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="setTimer(40)">
+                            <i class="fas fa-chalkboard-teacher"></i> Re-tell Lecture (40s)
+                        </button>
+                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="setTimer(10)">
+                            <i class="fas fa-question"></i> Answer Short Question (10s)
+                        </button>
+                        <button type="button" class="btn btn-outline-success btn-sm" onclick="setTimer(120)">
+                            <i class="fas fa-users"></i> Group Discussion (NEW)
+                        </button>
+                        <button type="button" class="btn btn-outline-success btn-sm" onclick="setTimer(60)">
+                            <i class="fas fa-comment-dots"></i> Respond to Situation (NEW)
+                        </button>
+                    {% elif section.name == 'writing' %}
+                        <button type="button" class="btn btn-outline-success btn-sm" onclick="setTimer(600)">
+                            <i class="fas fa-compress-alt"></i> Summarize Written Text (10min)
+                        </button>
+                        <button type="button" class="btn btn-outline-success btn-sm" onclick="setTimer(1200)">
+                            <i class="fas fa-pen-alt"></i> Essay Writing (20min)
+                        </button>
+                        <button type="button" class="btn btn-outline-success btn-sm" onclick="setTimer(300)">
+                            <i class="fas fa-clock"></i> Practice Session (5min)
+                        </button>
+                    {% elif section.name == 'reading' %}
+                        <button type="button" class="btn btn-outline-warning btn-sm" onclick="setTimer(120)">
+                            <i class="fas fa-mouse-pointer"></i> Single Answer (2min)
+                        </button>
+                        <button type="button" class="btn btn-outline-warning btn-sm" onclick="setTimer(150)">
+                            <i class="fas fa-check-double"></i> Multiple Answers (2.5min)
+                        </button>
+                        <button type="button" class="btn btn-outline-warning btn-sm" onclick="setTimer(180)">
+                            <i class="fas fa-sort"></i> Re-order Paragraphs (3min)
+                        </button>
+                        <button type="button" class="btn btn-outline-warning btn-sm" onclick="setTimer(150)">
+                            <i class="fas fa-puzzle-piece"></i> Reading Fill Blanks (2.5min)
+                        </button>
+                        <button type="button" class="btn btn-outline-warning btn-sm" onclick="setTimer(180)">
+                            <i class="fas fa-keyboard"></i> Reading & Writing Blanks (3min)
+                        </button>
+                    {% elif section.name == 'listening' %}
+                        <button type="button" class="btn btn-outline-info btn-sm" onclick="setTimer(600)">
+                            <i class="fas fa-compress-alt"></i> Summarize Spoken (10min)
+                        </button>
+                        <button type="button" class="btn btn-outline-info btn-sm" onclick="setTimer(90)">
+                            <i class="fas fa-check-double"></i> Multiple Answers (1.5min)
+                        </button>
+                        <button type="button" class="btn btn-outline-info btn-sm" onclick="setTimer(60)">
+                            <i class="fas fa-keyboard"></i> Fill in Blanks (1min)
+                        </button>
+                        <button type="button" class="btn btn-outline-info btn-sm" onclick="setTimer(45)">
+                            <i class="fas fa-highlighter"></i> Correct Summary (45s)
+                        </button>
+                        <button type="button" class="btn btn-outline-info btn-sm" onclick="setTimer(30)">
+                            <i class="fas fa-mouse-pointer"></i> Single Answer (30s)
+                        </button>
+                        <button type="button" class="btn btn-outline-info btn-sm" onclick="setTimer(30)">
+                            <i class="fas fa-hand-point-up"></i> Missing Word (30s)
+                        </button>
+                        <button type="button" class="btn btn-outline-info btn-sm" onclick="setTimer(45)">
+                            <i class="fas fa-times-circle"></i> Incorrect Words (45s)
+                        </button>
+                        <button type="button" class="btn btn-outline-info btn-sm" onclick="setTimer(20)">
+                            <i class="fas fa-pen"></i> Write from Dictation (20s)
+                        </button>
+                    {% elif section.name == 'collaborative' %}
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="setTimer(300)">
+                            <i class="fas fa-comments"></i> Discussion (5min)
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="setTimer(600)">
+                            <i class="fas fa-lightbulb"></i> Brainstorm (10min)
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="setTimer(900)">
+                            <i class="fas fa-users"></i> Group Study (15min)
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="setTimer(1200)">
+                            <i class="fas fa-chalkboard-teacher"></i> Peer Teaching (20min)
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="setTimer(1800)">
+                            <i class="fas fa-tasks"></i> Review Session (30min)
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="setTimer(60)">
+                            <i class="fas fa-clock"></i> Quick Check (1min)
+                        </button>
+                    {% endif %}
+                </div>
+                <small class="text-muted d-block mt-2">
+                    <i class="fas fa-info-circle"></i> 
+                    Click any preset to set the timer, or use the timer widget in the top-right corner for custom times.
+                </small>
+            </div>
+        </div>
+        
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        {% for content in contents %}
+            <div class="content-item">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="flex-grow-1">
+                        <h4>{{ content.title }}</h4>
+                        {% if content.description %}
+                            <p class="text-muted">{{ content.description }}</p>
+                        {% endif %}
+                        
+                        {% if content.content_type == 'video' and content.youtube_url %}
+                            <div class="youtube-embed mb-3">
+                                <iframe src="{{ content.get_youtube_embed_url }}" 
+                                        frameborder="0" 
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                        allowfullscreen></iframe>
+                            </div>
+                        {% elif content.content_type == 'note' and content.text_content %}
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="content-text">
+                                        {{ content.text_content|safe }}
+                                    </div>
+                                </div>
+                            </div>
+                        {% elif content.content_type == 'link' and content.external_url %}
+                            <div class="card">
+                                <div class="card-body">
+                                    <a href="{{ content.external_url }}" target="_blank" class="btn btn-outline-primary">
+                                        <i class="fas fa-external-link-alt"></i> Visit Link
+                                    </a>
+                                </div>
+                            </div>
+                        {% elif content.content_type == 'text' and content.text_content %}
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="content-text">
+                                        {{ content.text_content|safe }}
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="ms-3">
+                        <!-- Progress tracking buttons -->
+                        <div class="btn-group-vertical mb-2" role="group">
+                            {% with progress=user_progress|get_item:content.id %}
+                                <button class="btn btn-sm {% if progress.is_completed %}btn-success{% else %}btn-outline-success{% endif %}"
+                                        onclick="toggleProgress({{ content.id }}, 'complete')"
+                                        title="{% if progress.is_completed %}Mark as incomplete{% else %}Mark as complete{% endif %}">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                                <button class="btn btn-sm {% if progress.is_favorited %}btn-danger{% else %}btn-outline-danger{% endif %}"
+                                        onclick="toggleProgress({{ content.id }}, 'favorite')"
+                                        title="{% if progress.is_favorited %}Remove from favorites{% else %}Add to favorites{% endif %}">
+                                    <i class="fas fa-heart"></i>
+                                </button>
+                            {% endwith %}
+                        </div>
+                        
+                        {% if is_edit_mode %}
+                            <div class="btn-group-vertical" role="group">
+                                <a href="{% url 'edit_content' content.id %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="{% url 'delete_content' content.id %}" 
+                                   class="btn btn-sm btn-outline-danger"
+                                   onclick="return confirm('Are you sure you want to delete this content?')">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="mt-2">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="badge bg-secondary">{{ content.get_content_type_display }}</span>
+                            {% for tag in content.get_tags %}
+                                <span class="badge" style="background-color: {{ tag.color }}">{{ tag.name }}</span>
+                            {% endfor %}
+                        </div>
+                        <small class="text-muted">
+                            Created: {{ content.created_at|date:"M d, Y" }}
+                            {% if content.updated_at != content.created_at %}
+                                • Updated: {{ content.updated_at|date:"M d, Y" }}
+                            {% endif %}
+                        </small>
+                    </div>
+                </div>
+            </div>
+            <hr>
+        {% empty %}
+            <div class="text-center py-5">
+                <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                <h4>No content available</h4>
+                <p class="text-muted">Content for this section will appear here.</p>
+                {% if is_edit_mode %}
+                    <a href="{% url 'add_content' %}?section={{ section.id }}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Add First Content
+                    </a>
+                {% endif %}
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+async function toggleProgress(contentId, action) {
+    try {
+        const response = await fetch('{% url "toggle_progress" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                content_id: contentId,
+                action: action
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            // Update button appearance
+            const buttons = document.querySelectorAll(`[onclick*="${contentId}"]`);
+            buttons.forEach(button => {
+                if (button.onclick.toString().includes("'complete'")) {
+                    if (result.is_completed) {
+                        button.className = 'btn btn-sm btn-success';
+                        button.title = 'Mark as incomplete';
+                    } else {
+                        button.className = 'btn btn-sm btn-outline-success';
+                        button.title = 'Mark as complete';
+                    }
+                } else if (button.onclick.toString().includes("'favorite'")) {
+                    if (result.is_favorited) {
+                        button.className = 'btn btn-sm btn-danger';
+                        button.title = 'Remove from favorites';
+                    } else {
+                        button.className = 'btn btn-sm btn-outline-danger';
+                        button.title = 'Add to favorites';
+                    }
+                }
+            });
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error updating progress. Please try again.');
+    }
+}
+</script>
+{% endblock %}

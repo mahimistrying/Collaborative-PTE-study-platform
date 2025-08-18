@@ -1,0 +1,65 @@
+{% extends 'guide/base.html' %}
+
+{% block title %}Login - PTE Guide{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">
+                    <i class="fas fa-user"></i> Track Your Progress
+                </h4>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">Enter your name and PIN to track your progress across sessions.</p>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Your Name</label>
+                        <input type="text" class="form-control" id="name" name="name" 
+                               placeholder="Enter your name" required maxlength="50">
+                        <div class="form-text">This will be your display name.</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="pin" class="form-label">PIN (4-6 digits)</label>
+                        <input type="password" class="form-control" id="pin" name="pin" 
+                               placeholder="Enter your PIN" required pattern="\d{4,6}" maxlength="6">
+                        <div class="form-text">Use 4-6 digits. This keeps your progress secure.</div>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" name="action" value="login" class="btn btn-primary">
+                            <i class="fas fa-sign-in-alt"></i> Login
+                        </button>
+                        <button type="submit" name="action" value="register" class="btn btn-outline-success">
+                            <i class="fas fa-user-plus"></i> Create New Account
+                        </button>
+                    </div>
+                </form>
+                
+                <div class="mt-3 text-center">
+                    <a href="{% url 'home' %}" class="btn btn-link">
+                        <i class="fas fa-arrow-left"></i> Continue without tracking
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-body">
+                <h6><i class="fas fa-info-circle text-info"></i> How it works</h6>
+                <ul class="small text-muted mb-0">
+                    <li>Choose any name you like (doesn't have to be real)</li>
+                    <li>Set a 4-6 digit PIN to protect your progress</li>
+                    <li>Your progress (completed items, favorites) will be saved</li>
+                    <li>Use the same name + PIN to access your progress later</li>
+                    <li>You can study without tracking by continuing as guest</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

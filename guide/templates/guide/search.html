@@ -1,0 +1,74 @@
+{% extends 'guide/base.html' %}
+
+{% block title %}Search Results - PTE Guide{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1><i class="fas fa-search"></i> Search Results</h1>
+        {% if query %}
+            <p class="lead">Results for: "<strong>{{ query }}</strong>"</p>
+        {% else %}
+            <p class="lead">Enter a search term to find content</p>
+        {% endif %}
+    </div>
+</div>
+
+{% if query %}
+
+<div class="row">
+    <div class="col-12">
+        {% if results %}
+            <p class="text-muted">Found {{ results|length }} result{{ results|length|pluralize }}</p>
+            
+            {% for content in results %}
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <h5 class="card-title">
+                                    <a href="{% url 'section_detail' content.section.name %}" class="text-decoration-none">
+                                        {{ content.title }}
+                                    </a>
+                                </h5>
+                                <h6 class="card-subtitle mb-2 text-muted">
+                                    <i class="fas fa-{% if content.section.name == 'speaking' %}microphone{% elif content.section.name == 'writing' %}pen{% elif content.section.name == 'reading' %}book{% elif content.section.name == 'listening' %}headphones{% elif content.section.name == 'collaborative' %}users{% endif %}"></i>
+                                    {{ content.section.title }}
+                                    <span class="badge bg-secondary ms-2">{{ content.get_content_type_display }}</span>
+                                </h6>
+                                
+                                {% if content.description %}
+                                    <p class="card-text">{{ content.description|truncatewords:30 }}</p>
+                                {% endif %}
+                                
+                                {% if content.text_content %}
+                                    <p class="card-text text-muted">
+                                        {{ content.text_content|truncatewords:20 }}...
+                                    </p>
+                                {% endif %}
+                                
+                                <small class="text-muted">
+                                    Created: {{ content.created_at|date:"M d, Y" }}
+                                </small>
+                            </div>
+                            
+                            <div class="ms-3">
+                                <a href="{% url 'section_detail' content.section.name %}" class="btn btn-primary btn-sm">
+                                    View
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                <h4>No results found</h4>
+                <p class="text-muted">Try different keywords or check your spelling</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+{% endblock %}

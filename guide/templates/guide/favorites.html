@@ -1,0 +1,90 @@
+{% extends 'guide/base.html' %}
+
+{% block title %}My Favorites - PTE Guide{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1><i class="fas fa-heart text-danger"></i> My Favorites</h1>
+        <p class="lead">Content you've bookmarked for easy access</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        {% if favorites %}
+            {% for favorite in favorites %}
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <h5 class="card-title">
+                                    <a href="{% url 'section_detail' favorite.content.section.name %}" class="text-decoration-none">
+                                        {{ favorite.content.title }}
+                                    </a>
+                                </h5>
+                                <h6 class="card-subtitle mb-2 text-muted">
+                                    <i class="fas fa-{% if favorite.content.section.name == 'speaking' %}microphone{% elif favorite.content.section.name == 'writing' %}pen{% elif favorite.content.section.name == 'reading' %}book{% else %}headphones{% endif %}"></i>
+                                    {{ favorite.content.section.title }}
+                                    <span class="badge bg-secondary ms-2">{{ favorite.content.get_content_type_display }}</span>
+                                </h6>
+                                
+                                {% if favorite.content.description %}
+                                    <p class="card-text">{{ favorite.content.description|truncatewords:30 }}</p>
+                                {% endif %}
+                                
+                                <small class="text-muted">
+                                    Favorited: {{ favorite.favorited_at|date:"M d, Y" }}
+                                </small>
+                            </div>
+                            
+                            <div class="ms-3">
+                                <button class="btn btn-outline-danger btn-sm" 
+                                        onclick="toggleProgress({{ favorite.content.id }}, 'favorite')"
+                                        title="Remove from favorites">
+                                    <i class="fas fa-heart"></i>
+                                </button>
+                                <a href="{% url 'section_detail' favorite.content.section.name %}" class="btn btn-primary btn-sm">
+                                    View
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-heart fa-3x text-muted mb-3"></i>
+                <h4>No favorites yet</h4>
+                <p class="text-muted">Start exploring content and click the heart icon to add favorites!</p>
+                <a href="{% url 'home' %}" class="btn btn-primary">Browse Content</a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+async function toggleProgress(contentId, action) {
+    try {
+        const response = await fetch('{% url "toggle_progress" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                content_id: contentId,
+                action: action
+            })
+        });
+        
+        if (response.ok) {
+            // Reload page to update favorites list
+            location.reload();
+        }
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+</script>
+{% endblock %}

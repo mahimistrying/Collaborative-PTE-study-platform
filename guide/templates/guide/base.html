@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}PTE Guide{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .navbar-brand {
+            font-weight: bold;
+            color: #007bff !important;
+        }
+
+        .section-card {
+            transition: transform 0.2s;
+            cursor: pointer;
+        }
+
+        .section-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .edit-controls {
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 20px;
+        }
+
+        .content-item {
+            border-left: 4px solid #007bff;
+            padding-left: 15px;
+            margin-bottom: 20px;
+        }
+
+        .youtube-embed {
+            position: relative;
+            padding-bottom: 25%;
+            height: 0;
+            overflow: hidden;
+            max-width: 50%;
+            margin: 0 auto;
+        }
+
+        .youtube-embed iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .timer-widget {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            z-index: 1000;
+            min-width: 200px;
+            text-align: center;
+            border: none;
+            transition: all 0.3s ease;
+        }
+
+        .timer-widget.collapsed {
+            padding: 10px;
+            min-width: 60px;
+            border-radius: 50px;
+        }
+
+        .timer-display {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .timer-controls {
+            display: flex;
+            gap: 5px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .timer-btn {
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .timer-btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-1px);
+        }
+
+        .timer-presets {
+            display: flex;
+            gap: 3px;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .preset-btn {
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .preset-btn:hover {
+            background: rgba(255,255,255,0.25);
+        }
+
+        .timer-running {
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+            50% { box-shadow: 0 4px 25px rgba(103, 126, 234, 0.4); }
+            100% { box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        }
+
+        .timer-overtime {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%) !important;
+            animation: flashRed 1s infinite;
+        }
+
+        @keyframes flashRed {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+
+        .collapse-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: none;
+            border: none;
+            color: rgba(255,255,255,0.7);
+            font-size: 0.8rem;
+            cursor: pointer;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+
+        .collapse-btn:hover {
+            background: rgba(255,255,255,0.1);
+            color: white;
+        }
+
+        .text-purple {
+            color: #6f42c1 !important;
+        }
+
+        @media (max-width: 768px) {
+            .timer-widget {
+                top: 10px;
+                right: 10px;
+                min-width: 180px;
+                padding: 12px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container">
+            <a class="navbar-brand" href="{% url 'home' %}">
+                <i class="fas fa-graduation-cap"></i> PTE Guide
+            </a>
+            
+            <!-- Search Form -->
+            <form class="d-flex me-auto" method="get" action="{% url 'search_content' %}">
+                <div class="input-group">
+                    <input class="form-control form-control-sm" type="search" name="q" 
+                           placeholder="Search content..." value="{{ request.GET.q }}">
+                    <button class="btn btn-outline-secondary btn-sm" type="submit">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </form>
+            
+            <div class="navbar-nav ms-auto d-flex flex-row gap-2">
+                {% if request.session.current_user %}
+                    <span class="navbar-text me-2">
+                        <i class="fas fa-user text-primary"></i> {{ request.session.current_user }}
+                    </span>
+                    <a class="nav-link" href="{% url 'favorites' %}" title="My Favorites">
+                        <i class="fas fa-heart"></i>
+                    </a>
+                    <a class="nav-link" href="{% url 'progress' %}" title="My Progress">
+                        <i class="fas fa-chart-line"></i>
+                    </a>
+                    <a class="nav-link" href="{% url 'user_logout' %}" title="Logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </a>
+                {% else %}
+                    <a class="nav-link" href="{% url 'user_login' %}" title="Track Your Progress">
+                        <i class="fas fa-user-plus"></i> Track Progress
+                    </a>
+                {% endif %}
+                
+                {% if request.session.can_edit %}
+                <span class="navbar-text me-3">
+                    <i class="fas fa-edit text-success"></i> Edit Mode
+                </span>
+                <a class="nav-link" href="{% url 'logout_edit' %}">
+                    <i class="fas fa-cog"></i> Exit Edit
+                </a>
+                {% else %}
+                <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#authModal">
+                    <i class="fas fa-lock"></i> Edit Mode
+                </button>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+        {% endif %}
+
+        {% block content %}
+        {% endblock %}
+    </div>
+
+    <!-- Practice Timer Widget -->
+    <div id="timerWidget" class="timer-widget collapsed">
+        <button class="collapse-btn" onclick="toggleTimer()" id="collapseBtn">
+            <i class="fas fa-plus"></i>
+        </button>
+        
+        <div id="timerContent" style="display: none;">
+            <div class="timer-display" id="timerDisplay">00:00</div>
+            
+            <div class="timer-presets">
+                <button class="preset-btn" onclick="setTimer(30)">30s</button>
+                <button class="preset-btn" onclick="setTimer(60)">1m</button>
+                <button class="preset-btn" onclick="setTimer(90)">1.5m</button>
+                <button class="preset-btn" onclick="setTimer(120)">2m</button>
+                <button class="preset-btn" onclick="setTimer(300)">5m</button>
+                <button class="preset-btn" onclick="setTimer(600)">10m</button>
+                <button class="preset-btn" onclick="setTimer(1200)">20m</button>
+            </div>
+            
+            <div class="timer-controls">
+                <button class="timer-btn" onclick="startTimer()" id="startBtn">
+                    <i class="fas fa-play"></i> Start
+                </button>
+                <button class="timer-btn" onclick="pauseTimer()" id="pauseBtn" style="display: none;">
+                    <i class="fas fa-pause"></i> Pause
+                </button>
+                <button class="timer-btn" onclick="resetTimer()">
+                    <i class="fas fa-stop"></i> Reset
+                </button>
+                <button class="timer-btn" onclick="showCustomTimer()">
+                    <i class="fas fa-cog"></i> Custom
+                </button>
+            </div>
+        </div>
+        
+        <div id="collapsedContent">
+            <i class="fas fa-clock"></i>
+        </div>
+    </div>
+
+    <!-- Authentication Modal -->
+    <div class="modal fade" id="authModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Enter Edit Passcode</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="post" action="{% url 'authenticate_edit' %}">
+                    {% csrf_token %}
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="passcode" class="form-label">Passcode</label>
+                            <input type="password" class="form-control" id="passcode" name="passcode" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Authenticate</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Timer Variables
+        let timerInterval = null;
+        let timeLeft = 0;
+        let totalTime = 0;
+        let isRunning = false;
+        let isCollapsed = true;
+        
+        // Audio context for sound alerts
+        let audioContext = null;
+        
+        // Initialize audio context
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+        
+        // Play beep sound
+        function playBeep(frequency = 800, duration = 200) {
+            initAudio();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.value = frequency;
+            oscillator.type = 'sine';
+            
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration / 1000);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + duration / 1000);
+        }
+        
+        // Format time display
+        function formatTime(seconds) {
+            const mins = Math.floor(Math.abs(seconds) / 60);
+            const secs = Math.abs(seconds) % 60;
+            const sign = seconds < 0 ? '-' : '';
+            return `${sign}${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+        
+        // Update timer display
+        function updateDisplay() {
+            const display = document.getElementById('timerDisplay');
+            display.textContent = formatTime(timeLeft);
+            
+            // Update widget appearance based on timer state
+            const widget = document.getElementById('timerWidget');
+            widget.classList.toggle('timer-running', isRunning);
+            widget.classList.toggle('timer-overtime', timeLeft < 0);
+            
+            // Update page title
+            if (isRunning) {
+                document.title = `${formatTime(timeLeft)} - PTE Guide`;
+            } else if (document.title.includes(' - PTE Guide') && document.title.includes(':')) {
+                document.title = 'PTE Guide';
+            }
+        }
+        
+        // Set timer to specific seconds
+        function setTimer(seconds) {
+            if (isRunning) {
+                pauseTimer();
+            }
+            timeLeft = seconds;
+            totalTime = seconds;
+            updateDisplay();
+        }
+        
+        // Start timer
+        function startTimer() {
+            if (timeLeft <= 0) {
+                timeLeft = 300; // Default 5 minutes
+                totalTime = 300;
+            }
+            
+            // Auto-expand timer when starting
+            if (isCollapsed) {
+                toggleTimer();
+            }
+            
+            isRunning = true;
+            document.getElementById('startBtn').style.display = 'none';
+            document.getElementById('pauseBtn').style.display = 'inline-block';
+            
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                updateDisplay();
+                
+                // Time's up notification
+                if (timeLeft === 0) {
+                    playBeep(1000, 500);
+                    showNotification('Time\'s up!', 'Your practice time has ended.');
+                }
+                
+                // Warning beeps
+                if (timeLeft === 10 || timeLeft === 5 || timeLeft === 3 || timeLeft === 2 || timeLeft === 1) {
+                    playBeep(600, 200);
+                }
+            }, 1000);
+            
+            updateDisplay();
+        }
+        
+        // Pause timer
+        function pauseTimer() {
+            isRunning = false;
+            clearInterval(timerInterval);
+            document.getElementById('startBtn').style.display = 'inline-block';
+            document.getElementById('pauseBtn').style.display = 'none';
+            updateDisplay();
+        }
+        
+        // Reset timer
+        function resetTimer() {
+            isRunning = false;
+            clearInterval(timerInterval);
+            timeLeft = totalTime;
+            document.getElementById('startBtn').style.display = 'inline-block';
+            document.getElementById('pauseBtn').style.display = 'none';
+            updateDisplay();
+        }
+        
+        // Toggle collapsed state
+        function toggleTimer() {
+            // Don't allow collapsing while timer is running
+            if (isRunning && !isCollapsed) {
+                return;
+            }
+            
+            isCollapsed = !isCollapsed;
+            const widget = document.getElementById('timerWidget');
+            const content = document.getElementById('timerContent');
+            const collapsed = document.getElementById('collapsedContent');
+            const btn = document.getElementById('collapseBtn');
+            
+            if (isCollapsed) {
+                widget.classList.add('collapsed');
+                content.style.display = 'none';
+                collapsed.style.display = 'block';
+                btn.innerHTML = '<i class="fas fa-plus"></i>';
+            } else {
+                widget.classList.remove('collapsed');
+                content.style.display = 'block';
+                collapsed.style.display = 'none';
+                btn.innerHTML = '<i class="fas fa-minus"></i>';
+            }
+        }
+        
+        // Show custom timer input
+        function showCustomTimer() {
+            const minutes = prompt('Enter minutes for custom timer:', '5');
+            if (minutes && !isNaN(minutes) && minutes > 0) {
+                setTimer(parseInt(minutes) * 60);
+            }
+        }
+        
+        // Show notification
+        function showNotification(title, message) {
+            if (Notification.permission === 'granted') {
+                new Notification(title, {
+                    body: message,
+                    icon: '/static/img/timer-icon.png'
+                });
+            } else if (Notification.permission !== 'denied') {
+                Notification.requestPermission().then(permission => {
+                    if (permission === 'granted') {
+                        new Notification(title, {
+                            body: message,
+                            icon: '/static/img/timer-icon.png'
+                        });
+                    }
+                });
+            }
+            
+            // Fallback alert
+            setTimeout(() => {
+                alert(`${title}\n${message}`);
+            }, 100);
+        }
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            // Ctrl/Cmd + Space: Start/Pause timer
+            if ((e.ctrlKey || e.metaKey) && e.code === 'Space') {
+                e.preventDefault();
+                if (isRunning) {
+                    pauseTimer();
+                } else {
+                    startTimer();
+                }
+            }
+            
+            // Ctrl/Cmd + R: Reset timer (prevent page reload)
+            if ((e.ctrlKey || e.metaKey) && e.key === 'r' && isRunning) {
+                e.preventDefault();
+                resetTimer();
+            }
+        });
+        
+        // Request notification permission on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            if ('Notification' in window && Notification.permission === 'default') {
+                Notification.requestPermission();
+            }
+            
+            // Initialize display
+            updateDisplay();
+        });
+        
+        // Prevent timer from stopping when page is hidden
+        document.addEventListener('visibilitychange', function() {
+            if (document.visibilityState === 'visible' && isRunning) {
+                updateDisplay();
+            }
+        });
+    </script>
+</body>
+
+</html>

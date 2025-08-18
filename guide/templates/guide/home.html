@@ -1,0 +1,145 @@
+{% extends 'guide/base.html' %}
+
+{% block title %}PTE Guide - Home{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="jumbotron bg-primary text-white p-5 rounded">
+            <h1 class="display-4">Welcome to PTE Guide</h1>
+            <p class="lead">Your comprehensive guide to PTE Academic preparation with videos, notes, and important links.</p>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    {% for section in sections %}
+    <div class="col-md-6 col-lg-3 mb-4">
+        <div class="card section-card h-100" onclick="location.href='{% url 'section_detail' section.name %}'">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    {% if section.name == 'speaking' %}
+                        <i class="fas fa-microphone fa-3x text-primary"></i>
+                    {% elif section.name == 'writing' %}
+                        <i class="fas fa-pen fa-3x text-success"></i>
+                    {% elif section.name == 'reading' %}
+                        <i class="fas fa-book fa-3x text-warning"></i>
+                    {% elif section.name == 'listening' %}
+                        <i class="fas fa-headphones fa-3x text-info"></i>
+                    {% elif section.name == 'collaborative' %}
+                        <i class="fas fa-users fa-3x text-purple"></i>
+                    {% endif %}
+                </div>
+                <h5 class="card-title">{{ section.title }}</h5>
+                <p class="card-text">{{ section.description|truncatewords:15 }}</p>
+                <small class="text-muted">{{ section.contents.count }} items</small>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="alert alert-info">
+            <h4>No sections available yet</h4>
+            <p>Sections will appear here once they are created.</p>
+            {% if request.session.can_edit %}
+                <p>You're in edit mode - you can add content through the Django admin panel.</p>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Search Results -->
+{% if search_results %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-search"></i> Search Results</h5>
+            </div>
+            <div class="card-body">
+                {% for content in search_results %}
+                    <div class="border-bottom pb-2 mb-2">
+                        <h6>
+                            <a href="{% url 'section_detail' content.section.name %}" class="text-decoration-none">
+                                {{ content.title }}
+                            </a>
+                        </h6>
+                        <small class="text-muted">
+                            <i class="fas fa-{% if content.section.name == 'speaking' %}microphone{% elif content.section.name == 'writing' %}pen{% elif content.section.name == 'reading' %}book{% elif content.section.name == 'listening' %}headphones{% elif content.section.name == 'collaborative' %}users{% endif %}"></i>
+                            {{ content.section.title }} • {{ content.get_content_type_display }}
+                        </small>
+                        {% if content.description %}
+                            <p class="small mt-1">{{ content.description|truncatewords:20 }}</p>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+                <a href="{% url 'search_content' %}?q={{ search_query }}" class="btn btn-sm btn-primary">
+                    View All Results
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Recent Content -->
+{% if recent_content %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-clock"></i> Recent Content</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for content in recent_content %}
+                        <div class="col-md-6 col-lg-4 mb-3">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h6 class="card-title">
+                                        <a href="{% url 'section_detail' content.section.name %}" class="text-decoration-none">
+                                            {{ content.title }}
+                                        </a>
+                                    </h6>
+                                    <p class="card-text">
+                                        <small class="text-muted">
+                                            <i class="fas fa-{% if content.section.name == 'speaking' %}microphone{% elif content.section.name == 'writing' %}pen{% elif content.section.name == 'reading' %}book{% elif content.section.name == 'listening' %}headphones{% elif content.section.name == 'collaborative' %}users{% endif %}"></i>
+                                            {{ content.section.title }}
+                                        </small>
+                                    </p>
+                                    {% if content.description %}
+                                        <p class="card-text small">{{ content.description|truncatewords:15 }}</p>
+                                    {% endif %}
+                                    <span class="badge bg-secondary">{{ content.get_content_type_display }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if request.session.can_edit %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-plus"></i> Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <a href="{% url 'add_content' %}" class="btn btn-primary me-2">
+                    <i class="fas fa-plus"></i> Add New Content
+                </a>
+                <a href="/admin/" class="btn btn-secondary" target="_blank">
+                    <i class="fas fa-cog"></i> Admin Panel
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

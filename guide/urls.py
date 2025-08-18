@@ -1,0 +1,25 @@
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    path('', views.home, name='home'),
+    path('section/<str:section_name>/', views.section_detail, name='section_detail'),
+    path('auth/', views.authenticate_edit, name='authenticate_edit'),
+    path('logout/', views.logout_edit, name='logout_edit'),
+    path('add/', views.edit_content_simple, name='add_content'),
+    path('edit/<int:content_id>/', views.edit_content_simple, name='edit_content'),
+    path('add-old/', views.edit_content, name='add_content_old'),
+    path('edit-old/<int:content_id>/', views.edit_content, name='edit_content_old'),
+    path('delete/<int:content_id>/', views.delete_content, name='delete_content'),
+    path('toggle-progress/', views.toggle_progress, name='toggle_progress'),
+    path('search/', views.search_content, name='search_content'),
+    path('favorites/', views.favorites_view, name='favorites'),
+    path('progress/', views.progress_view, name='progress'),
+    path('debug-edit/', views.debug_edit, name='debug_edit'),
+    path('login/', views.user_login, name='user_login'),
+    path('user-logout/', views.user_logout, name='user_logout'),
+    path('whiteboard/', views.whiteboard, name='whiteboard'),
+    path('whiteboard/gallery/', views.whiteboard_gallery, name='whiteboard_gallery'),
+    path('whiteboard/save/', views.save_whiteboard, name='save_whiteboard'),
+    path('whiteboard/delete/<int:whiteboard_id>/', views.delete_whiteboard, name='delete_whiteboard'),
+]
