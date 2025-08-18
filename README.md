@@ -4,36 +4,36 @@ A comprehensive Django-based website for PTE Academic preparation with the lates
 
 ## Features
 
-### 🎯 **Updated for 2024 PTE Format**
+###  **Updated for 2025 PTE Format**
 - **Speaking Section** (30-35 min): All 8 tasks including NEW Group Discussion & Respond to Situation
 - **Writing Section** (24-32 min): Summarize Written Text & Essay Writing
 - **Reading Section** (29-30 min): All 5 task types with updated timing
 - **Listening Section** (30-43 min): All 8 tasks including Write from Dictation
 
-### 📚 **Content Management**
+### **Content Management**
 - **YouTube videos, notes, important links, and text content**
 - **Advanced tagging system** with 35+ predefined tags
 - **Content filtering** by type, difficulty, and completion status
 - **Smart search** across all content
 
-### ⏱️ **Practice Tools**
+###  **Practice Tools**
 - **Built-in timer widget** with PTE-specific presets
 - **Task-specific timers** for all question types
 - **Audio notifications** and visual indicators
 - **Keyboard shortcuts** (Ctrl+Space to start/pause)
 
-### 📊 **Progress Tracking**
+### **Progress Tracking**
 - **Mark content as completed** with visual indicators
 - **Favorite/bookmark system** for important content
 - **Progress dashboard** showing completion by section
 - **Session-based tracking** (no login required)
 
-### 🔐 **Access Control**
+### **Access Control**
 - **Public viewing** for all content
 - **Protected editing** with passcode authentication
 - **Admin panel** for advanced management
 
-### 🎨 **User Experience**
+### **User Experience**
 - **Responsive Bootstrap design**
 - **Real-time progress updates**
 - **Advanced filtering and sorting**
