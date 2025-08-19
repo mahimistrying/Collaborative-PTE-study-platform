@@ -14,4 +14,7 @@ python manage.py migrate
 echo "Setting up initial data..."
 python manage.py setup_initial_data
 
+echo "Creating admin user..."
+python manage.py create_admin
+
 echo "Build completed successfully!"
