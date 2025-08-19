@@ -22,5 +22,10 @@ urlpatterns = [
     path('whiteboard/gallery/', views.whiteboard_gallery, name='whiteboard_gallery'),
     path('whiteboard/save/', views.save_whiteboard, name='save_whiteboard'),
     path('whiteboard/delete/<int:whiteboard_id>/', views.delete_whiteboard, name='delete_whiteboard'),
+    path('spelling-mistakes/', views.spelling_mistakes, name='spelling_mistakes'),
+    path('spelling-mistakes/add/', views.add_spelling_mistake, name='add_spelling_mistake'),
+    path('spelling-mistakes/edit/<int:mistake_id>/', views.edit_spelling_mistake, name='edit_spelling_mistake'),
+    path('spelling-mistakes/delete/<int:mistake_id>/', views.delete_spelling_mistake, name='delete_spelling_mistake'),
+    path('spelling-mistakes/toggle-review/', views.toggle_spelling_review, name='toggle_spelling_review'),
     path('health/', views.health_check, name='health_check'),
 ]

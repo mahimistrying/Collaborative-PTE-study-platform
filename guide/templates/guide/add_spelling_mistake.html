@@ -1,0 +1,112 @@
+{% extends 'guide/base.html' %}
+
+{% block title %}Add Spelling Mistake - PTE Guide{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4>
+                        <i class="fas fa-plus text-primary me-2"></i>
+                        Add New Spelling Mistake
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="incorrect_word" class="form-label">
+                                    <i class="fas fa-times text-danger me-1"></i>
+                                    Incorrect Word *
+                                </label>
+                                <input type="text" class="form-control" id="incorrect_word" name="incorrect_word" 
+                                       required placeholder="How you spelled it incorrectly">
+                                <div class="form-text">Enter the word as you spelled it wrong</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="correct_word" class="form-label">
+                                    <i class="fas fa-check text-success me-1"></i>
+                                    Correct Word *
+                                </label>
+                                <input type="text" class="form-control" id="correct_word" name="correct_word" 
+                                       required placeholder="The correct spelling">
+                                <div class="form-text">Enter the correct spelling</div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="context" class="form-label">
+                                <i class="fas fa-quote-left text-info me-1"></i>
+                                Context (Optional)
+                            </label>
+                            <textarea class="form-control" id="context" name="context" rows="2" 
+                                      placeholder="The sentence or context where you made this mistake"></textarea>
+                            <div class="form-text">This helps you remember where and how you made the mistake</div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="notes" class="form-label">
+                                <i class="fas fa-sticky-note text-warning me-1"></i>
+                                Notes (Optional)
+                            </label>
+                            <textarea class="form-control" id="notes" name="notes" rows="2" 
+                                      placeholder="Why do you think you made this mistake? Any memory tricks?"></textarea>
+                            <div class="form-text">Add personal notes to help you remember the correct spelling</div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="d-flex justify-content-between">
+                                    <a href="{% url 'spelling_mistakes' %}" class="btn btn-secondary">
+                                        <i class="fas fa-arrow-left me-1"></i>Cancel
+                                    </a>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save me-1"></i>Add Mistake
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Quick Tips -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6><i class="fas fa-lightbulb text-warning me-1"></i>Quick Tips</h6>
+                </div>
+                <div class="card-body">
+                    <ul class="mb-0">
+                        <li><strong>Be specific:</strong> Include the exact context where you made the mistake</li>
+                        <li><strong>Add notes:</strong> Explain why you think you made this mistake</li>
+                        <li><strong>Memory tricks:</strong> Create mnemonics or associations to remember the correct spelling</li>
+                        <li><strong>Review regularly:</strong> Come back to review your mistakes periodically</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.form-control:focus {
+    border-color: #6c5ce7;
+    box-shadow: 0 0 0 0.2rem rgba(108, 92, 231, 0.25);
+}
+
+.card {
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    border: none;
+}
+
+.card-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-bottom: none;
+}
+</style>
+{% endblock %}

@@ -5,7 +5,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 from django.db.models import Q, Count
 from django.utils import timezone
-from .models import Section, Content, Tag, ContentTag, UserProgress, SimpleUser, WhiteboardImage
+from .models import Section, Content, Tag, ContentTag, UserProgress, SimpleUser, WhiteboardImage, SpellingMistake
 import json
 import uuid
 
@@ -573,6 +573,183 @@ def health_check(request):
             'Interactive Whiteboard',
             'User Authentication', 
             'Progress Tracking',
-            'Collaborative Study'
+            'Collaborative Study',
+            'Spelling Mistakes Tracker'
         ]
     })
+
+def spelling_mistakes(request):
+    """View spelling mistakes for current user"""
+    current_user = get_current_user(request)
+    if not current_user:
+        messages.info(request, 'Please login to track your spelling mistakes.')
+        return redirect('user_login')
+    
+    # Get filter parameters
+    filter_reviewed = request.GET.get('reviewed', '')
+    search_query = request.GET.get('search', '')
+    
+    # Base queryset
+    mistakes = SpellingMistake.objects.filter(user=current_user)
+    
+    # Apply filters
+    if filter_reviewed == 'true':
+        mistakes = mistakes.filter(is_reviewed=True)
+    elif filter_reviewed == 'false':
+        mistakes = mistakes.filter(is_reviewed=False)
+    
+    if search_query:
+        mistakes = mistakes.filter(
+            Q(incorrect_word__icontains=search_query) |
+            Q(correct_word__icontains=search_query) |
+            Q(context__icontains=search_query)
+        )
+    
+    context = {
+        'mistakes': mistakes,
+        'current_user': current_user,
+        'search_query': search_query,
+        'filter_reviewed': filter_reviewed,
+    }
+    return render(request, 'guide/spelling_mistakes.html', context)
+
+def add_spelling_mistake(request):
+    """Add a new spelling mistake"""
+    current_user = get_current_user(request)
+    if not current_user:
+        messages.info(request, 'Please login to add spelling mistakes.')
+        return redirect('user_login')
+    
+    if request.method == 'POST':
+        incorrect_word = request.POST.get('incorrect_word', '').strip()
+        correct_word = request.POST.get('correct_word', '').strip()
+        context = request.POST.get('context', '').strip()
+        notes = request.POST.get('notes', '').strip()
+        
+        if not incorrect_word or not correct_word:
+            messages.error(request, 'Both incorrect and correct words are required.')
+            return render(request, 'guide/add_spelling_mistake.html')
+        
+        try:
+            # Check if this mistake already exists for the user
+            existing_mistake = SpellingMistake.objects.filter(
+                user=current_user,
+                incorrect_word__iexact=incorrect_word,
+                correct_word__iexact=correct_word
+            ).first()
+            
+            if existing_mistake:
+                # Increment frequency and update context if provided
+                existing_mistake.frequency += 1
+                if context:
+                    existing_mistake.context = context
+                if notes:
+                    existing_mistake.notes = notes
+                existing_mistake.is_reviewed = False  # Reset reviewed status
+                existing_mistake.save()
+                messages.success(request, f'Updated existing mistake: {incorrect_word} → {correct_word} (frequency: {existing_mistake.frequency})')
+            else:
+                # Create new mistake
+                SpellingMistake.objects.create(
+                    user=current_user,
+                    incorrect_word=incorrect_word,
+                    correct_word=correct_word,
+                    context=context,
+                    notes=notes
+                )
+                messages.success(request, f'Added spelling mistake: {incorrect_word} → {correct_word}')
+            
+            return redirect('spelling_mistakes')
+            
+        except Exception as e:
+            messages.error(request, f'An error occurred: {str(e)}')
+    
+    return render(request, 'guide/add_spelling_mistake.html')
+
+@csrf_exempt
+def toggle_spelling_review(request):
+    """Toggle reviewed status of a spelling mistake"""
+    if request.method == 'POST':
+        current_user = get_current_user(request)
+        if not current_user:
+            return JsonResponse({'success': False, 'error': 'Please login first'})
+        
+        data = json.loads(request.body)
+        mistake_id = data.get('mistake_id')
+        
+        try:
+            mistake = SpellingMistake.objects.get(id=mistake_id, user=current_user)
+            mistake.is_reviewed = not mistake.is_reviewed
+            mistake.save()
+            
+            return JsonResponse({
+                'success': True,
+                'is_reviewed': mistake.is_reviewed
+            })
+        except SpellingMistake.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'Spelling mistake not found'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+def edit_spelling_mistake(request, mistake_id):
+    """Edit an existing spelling mistake"""
+    current_user = get_current_user(request)
+    if not current_user:
+        messages.info(request, 'Please login to edit spelling mistakes.')
+        return redirect('user_login')
+    
+    mistake = get_object_or_404(SpellingMistake, id=mistake_id, user=current_user)
+    
+    if request.method == 'POST':
+        incorrect_word = request.POST.get('incorrect_word', '').strip()
+        correct_word = request.POST.get('correct_word', '').strip()
+        context = request.POST.get('context', '').strip()
+        notes = request.POST.get('notes', '').strip()
+        frequency = request.POST.get('frequency', 1)
+        
+        if not incorrect_word or not correct_word:
+            messages.error(request, 'Both incorrect and correct words are required.')
+            return render(request, 'guide/edit_spelling_mistake.html', {'mistake': mistake})
+        
+        try:
+            mistake.incorrect_word = incorrect_word
+            mistake.correct_word = correct_word
+            mistake.context = context
+            mistake.notes = notes
+            mistake.frequency = int(frequency) if frequency else 1
+            mistake.save()
+            
+            messages.success(request, f'Updated spelling mistake: {incorrect_word} → {correct_word}')
+            return redirect('spelling_mistakes')
+            
+        except Exception as e:
+            messages.error(request, f'An error occurred: {str(e)}')
+    
+    context = {
+        'mistake': mistake,
+        'current_user': current_user,
+    }
+    return render(request, 'guide/edit_spelling_mistake.html', context)
+
+def delete_spelling_mistake(request, mistake_id):
+    """Delete a spelling mistake"""
+    current_user = get_current_user(request)
+    if not current_user:
+        messages.info(request, 'Please login to delete spelling mistakes.')
+        return redirect('user_login')
+    
+    mistake = get_object_or_404(SpellingMistake, id=mistake_id, user=current_user)
+    
+    if request.method == 'POST':
+        mistake_text = f"{mistake.incorrect_word} → {mistake.correct_word}"
+        mistake.delete()
+        messages.success(request, f'Deleted spelling mistake: {mistake_text}')
+        return redirect('spelling_mistakes')
+    
+    context = {
+        'mistake': mistake,
+        'current_user': current_user,
+    }
+    return render(request, 'guide/confirm_delete_mistake.html', context)

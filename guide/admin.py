@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Section, Content, Tag, ContentTag, UserProgress, SimpleUser, WhiteboardImage
+from .models import Section, Content, Tag, ContentTag, UserProgress, SimpleUser, WhiteboardImage, SpellingMistake
 
 @admin.register(Section)
 class SectionAdmin(admin.ModelAdmin):
@@ -64,3 +64,25 @@ class WhiteboardImageAdmin(admin.ModelAdmin):
     list_filter = ['created_at', 'created_by']
     search_fields = ['title', 'created_by__name']
     readonly_fields = ['created_at', 'image_data']
+
+@admin.register(SpellingMistake)
+class SpellingMistakeAdmin(admin.ModelAdmin):
+    list_display = ['incorrect_word', 'correct_word', 'user', 'frequency', 'is_reviewed', 'updated_at']
+    list_filter = ['is_reviewed', 'frequency', 'created_at', 'user']
+    search_fields = ['incorrect_word', 'correct_word', 'context', 'notes', 'user__name']
+    list_editable = ['is_reviewed']
+    readonly_fields = ['created_at', 'updated_at']
+    
+    fieldsets = (
+        ('Spelling Mistake', {
+            'fields': ('user', 'incorrect_word', 'correct_word', 'frequency', 'is_reviewed')
+        }),
+        ('Additional Information', {
+            'fields': ('context', 'notes'),
+            'classes': ('collapse',)
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )

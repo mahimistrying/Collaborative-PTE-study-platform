@@ -174,3 +174,21 @@ class WhiteboardImage(models.Model):
     
     def __str__(self):
         return f"{self.title} - {self.created_at.strftime('%Y-%m-%d %H:%M')}"
+
+class SpellingMistake(models.Model):
+    user = models.ForeignKey(SimpleUser, on_delete=models.CASCADE, related_name='spelling_mistakes')
+    incorrect_word = models.CharField(max_length=100, help_text="The word you spelled incorrectly")
+    correct_word = models.CharField(max_length=100, help_text="The correct spelling")
+    context = models.TextField(blank=True, help_text="Sentence or context where you made the mistake")
+    notes = models.TextField(blank=True, help_text="Your notes about why you made this mistake")
+    frequency = models.PositiveIntegerField(default=1, help_text="How many times you've made this mistake")
+    is_reviewed = models.BooleanField(default=False, help_text="Mark as reviewed after studying")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-updated_at']
+        unique_together = ['user', 'incorrect_word', 'correct_word']
+    
+    def __str__(self):
+        return f"{self.incorrect_word} → {self.correct_word} ({self.user.name})"

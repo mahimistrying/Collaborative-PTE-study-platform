@@ -1,0 +1,130 @@
+{% extends 'guide/base.html' %}
+
+{% block title %}Edit Spelling Mistake - PTE Guide{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4>
+                        <i class="fas fa-edit text-warning me-2"></i>
+                        Edit Spelling Mistake
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="incorrect_word" class="form-label">
+                                    <i class="fas fa-times text-danger me-1"></i>
+                                    Incorrect Word *
+                                </label>
+                                <input type="text" class="form-control" id="incorrect_word" name="incorrect_word" 
+                                       required value="{{ mistake.incorrect_word }}" placeholder="How you spelled it incorrectly">
+                                <div class="form-text">Enter the word as you spelled it wrong</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="correct_word" class="form-label">
+                                    <i class="fas fa-check text-success me-1"></i>
+                                    Correct Word *
+                                </label>
+                                <input type="text" class="form-control" id="correct_word" name="correct_word" 
+                                       required value="{{ mistake.correct_word }}" placeholder="The correct spelling">
+                                <div class="form-text">Enter the correct spelling</div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="context" class="form-label">
+                                <i class="fas fa-quote-left text-info me-1"></i>
+                                Context (Optional)
+                            </label>
+                            <textarea class="form-control" id="context" name="context" rows="2" 
+                                      placeholder="The sentence or context where you made this mistake">{{ mistake.context }}</textarea>
+                            <div class="form-text">This helps you remember where and how you made the mistake</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="notes" class="form-label">
+                                <i class="fas fa-sticky-note text-warning me-1"></i>
+                                Notes (Optional)
+                            </label>
+                            <textarea class="form-control" id="notes" name="notes" rows="2" 
+                                      placeholder="Why do you think you made this mistake? Any memory tricks?">{{ mistake.notes }}</textarea>
+                            <div class="form-text">Add personal notes to help you remember the correct spelling</div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="frequency" class="form-label">
+                                <i class="fas fa-chart-bar text-primary me-1"></i>
+                                Frequency
+                            </label>
+                            <input type="number" class="form-control" id="frequency" name="frequency" 
+                                   min="1" value="{{ mistake.frequency }}" placeholder="1">
+                            <div class="form-text">How many times you've made this mistake</div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="d-flex justify-content-between">
+                                    <a href="{% url 'spelling_mistakes' %}" class="btn btn-secondary">
+                                        <i class="fas fa-arrow-left me-1"></i>Cancel
+                                    </a>
+                                    <button type="submit" class="btn btn-warning">
+                                        <i class="fas fa-save me-1"></i>Update Mistake
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Mistake Info -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6><i class="fas fa-info-circle text-info me-1"></i>Mistake Information</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Created:</strong> {{ mistake.created_at|date:"M d, Y H:i" }}</p>
+                            <p><strong>Last Updated:</strong> {{ mistake.updated_at|date:"M d, Y H:i" }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Frequency:</strong> {{ mistake.frequency }} time{{ mistake.frequency|pluralize }}</p>
+                            <p><strong>Status:</strong> 
+                                <span class="badge {% if mistake.is_reviewed %}bg-success{% else %}bg-warning text-dark{% endif %}">
+                                    {% if mistake.is_reviewed %}Reviewed{% else %}Not Reviewed{% endif %}
+                                </span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.form-control:focus {
+    border-color: #f39c12;
+    box-shadow: 0 0 0 0.2rem rgba(243, 156, 18, 0.25);
+}
+
+.card {
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    border: none;
+}
+
+.card-header {
+    background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+    color: white;
+    border-bottom: none;
+}
+</style>
+{% endblock %}

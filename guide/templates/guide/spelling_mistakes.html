@@ -1,0 +1,245 @@
+{% extends 'guide/base.html' %}
+
+{% block title %}My Spelling Mistakes - PTE Guide{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>
+                    <i class="fas fa-spell-check text-danger me-2"></i>
+                    My Spelling Mistakes
+                </h2>
+                <a href="{% url 'add_spelling_mistake' %}" class="btn btn-primary">
+                    <i class="fas fa-plus me-1"></i>Add New Mistake
+                </a>
+            </div>
+
+            <!-- Filter and Search Section -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-6">
+                            <label for="search" class="form-label">Search</label>
+                            <input type="text" class="form-control" id="search" name="search" 
+                                   value="{{ search_query }}" placeholder="Search words or context...">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="reviewed" class="form-label">Review Status</label>
+                            <select class="form-select" id="reviewed" name="reviewed">
+                                <option value="">All Mistakes</option>
+                                <option value="false" {% if filter_reviewed == 'false' %}selected{% endif %}>Not Reviewed</option>
+                                <option value="true" {% if filter_reviewed == 'true' %}selected{% endif %}>Reviewed</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button type="submit" class="btn btn-outline-primary w-100">
+                                <i class="fas fa-filter me-1"></i>Filter
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Mistakes List -->
+            {% if mistakes %}
+                <div class="row">
+                    {% for mistake in mistakes %}
+                        <div class="col-md-6 col-lg-4 mb-4">
+                            <div class="card h-100 {% if mistake.is_reviewed %}border-success{% else %}border-warning{% endif %}">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <div class="d-flex align-items-center">
+                                        {% if mistake.frequency > 1 %}
+                                            <span class="badge bg-danger me-2">{{ mistake.frequency }}x</span>
+                                        {% endif %}
+                                        <span class="badge {% if mistake.is_reviewed %}bg-success{% else %}bg-warning text-dark{% endif %}">
+                                            {% if mistake.is_reviewed %}Reviewed{% else %}Not Reviewed{% endif %}
+                                        </span>
+                                    </div>
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-outline-secondary" type="button" 
+                                                data-bs-toggle="dropdown" aria-expanded="false">
+                                            <i class="fas fa-ellipsis-v"></i>
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                            <li>
+                                                <a class="dropdown-item" href="{% url 'edit_spelling_mistake' mistake.id %}">
+                                                    <i class="fas fa-edit me-1"></i>Edit
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <button class="dropdown-item text-danger" 
+                                                        onclick="confirmDelete({{ mistake.id }}, '{{ mistake.incorrect_word }}', '{{ mistake.correct_word }}')">
+                                                    <i class="fas fa-trash me-1"></i>Delete
+                                                </button>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="text-center mb-3">
+                                        <div class="row">
+                                            <div class="col-5">
+                                                <div class="text-danger fw-bold fs-5">{{ mistake.incorrect_word }}</div>
+                                                <small class="text-muted">Incorrect</small>
+                                            </div>
+                                            <div class="col-2">
+                                                <div class="text-muted fs-4">→</div>
+                                            </div>
+                                            <div class="col-5">
+                                                <div class="text-success fw-bold fs-5">{{ mistake.correct_word }}</div>
+                                                <small class="text-muted">Correct</small>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {% if mistake.context %}
+                                        <div class="mb-2">
+                                            <strong>Context:</strong>
+                                            <p class="text-muted small">{{ mistake.context }}</p>
+                                        </div>
+                                    {% endif %}
+
+                                    {% if mistake.notes %}
+                                        <div class="mb-2">
+                                            <strong>Notes:</strong>
+                                            <p class="text-muted small">{{ mistake.notes }}</p>
+                                        </div>
+                                    {% endif %}
+
+                                    <div class="d-flex justify-content-between align-items-center mt-3">
+                                        <small class="text-muted">
+                                            Added: {{ mistake.created_at|date:"M d, Y" }}
+                                        </small>
+                                        <button class="btn btn-sm {% if mistake.is_reviewed %}btn-outline-success{% else %}btn-outline-warning{% endif %}" 
+                                                onclick="toggleReview({{ mistake.id }})">
+                                            <i class="fas {% if mistake.is_reviewed %}fa-eye-slash{% else %}fa-eye{% endif %} me-1"></i>
+                                            {% if mistake.is_reviewed %}Mark Unreviewed{% else %}Mark Reviewed{% endif %}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Stats Summary -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <h5 class="text-primary">{{ mistakes|length }}</h5>
+                                        <small class="text-muted">Total Mistakes</small>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <h5 class="text-success">{{ mistakes|length }} - {{ mistakes|length }}</h5>
+                                        <small class="text-muted">Reviewed</small>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <h5 class="text-warning">{{ mistakes|length }}</h5>
+                                        <small class="text-muted">Not Reviewed</small>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <h5 class="text-danger">0</h5>
+                                        <small class="text-muted">High Frequency (3+)</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-spell-check fa-4x text-muted mb-3"></i>
+                    <h4>No Spelling Mistakes Yet</h4>
+                    <p class="text-muted">Start tracking your spelling mistakes to improve your writing skills.</p>
+                    <a href="{% url 'add_spelling_mistake' %}" class="btn btn-primary">
+                        <i class="fas fa-plus me-1"></i>Add Your First Mistake
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this spelling mistake?</p>
+                <div class="text-center">
+                    <span class="text-danger fw-bold" id="deleteIncorrect"></span>
+                    <span class="text-muted">→</span>
+                    <span class="text-success fw-bold" id="deleteCorrect"></span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="deleteForm" method="post" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleReview(mistakeId) {
+    fetch('{% url "toggle_spelling_review" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+            mistake_id: mistakeId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while updating the review status.');
+    });
+}
+
+function confirmDelete(mistakeId, incorrectWord, correctWord) {
+    document.getElementById('deleteIncorrect').textContent = incorrectWord;
+    document.getElementById('deleteCorrect').textContent = correctWord;
+    document.getElementById('deleteForm').action = '{% url "delete_spelling_mistake" 0 %}'.replace('0', mistakeId);
+    
+    var deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    deleteModal.show();
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %}
